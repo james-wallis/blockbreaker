@@ -25,6 +25,9 @@ ballRadius = 1
 blockWidth = 6
 blockHeight = 2
 colourList = ["Red", "Orange", "Yellow", "Green", "Blue"]
+initialBallSpeedX = -0.1
+initialBallSpeedY = 1
+directionSpeedChangeX = 1
 
 #main and submain exist because when the game restarts, I want to use the same graphWindow
 def main():
@@ -188,8 +191,8 @@ def drawText(win, centre, string, size):
 #Making the game Function
 def playGame(court, bat, ball, blockList, dividerList, scoreList, \
             numberOfScoreList, timer, totalScore, stopButton, superList, level, levelNo):
-    ballSpeedX = -0.1
-    ballSpeedY = 1
+    ballSpeedX = initialBallSpeedX
+    ballSpeedY = initialBallSpeedY
     gameOver = False
     #start and oldTime make the timer function
     start = timeit.default_timer()
@@ -240,23 +243,24 @@ def checkBlocks(ball, ballSpeedX, ballSpeedY, blockList, score, win, numberOfSco
             #Deletes hit block from blockList
             blockList.remove(currentBlock)
             ballSpeedY = -ballSpeedY
-            ballSpeedX = random.random() * 0.01 - 0.005
+            ballSpeedX = random.random() * directionSpeedChangeX - (directionSpeedChangeX / 2)
             #Change score
             score = scoreAmount(win, score, currentBlock[1], numberOfScoreList, totalScore)
             #Change level
             ballSpeedY, level = setLevel(win, blockList, ballSpeedY, level, levelNo)
             #Change how the blocks look
-            if level % 2 == 0:
-                for i in range(len(blockList)):
-                    blockList[i][0].setFill("black")
-            elif level == 5:
-                for i in range(len(blockList)):
-                    blockList[i][0].setFill("black")
-                    blockList[i][0].setOutline("white")
-            else: 
-                for i in range(len(blockList)):
-                    blockList[i][0].setFill(blockList[i][1])
-                    blockList[i][0].setOutline(blockList[i][1])
+            # TODO debug this as it causes the program to freeze
+            # if level % 2 == 0:
+            #     for i in range(len(blockList)):
+            #         blockList[i][0].setFill("black")
+            # elif level == 5:
+            #     for i in range(len(blockList)):
+            #         blockList[i][0].setFill("black")
+            #         blockList[i][0].setOutline("white")
+            # else: 
+            #     for i in range(len(blockList)):
+            #         blockList[i][0].setFill(blockList[i][1])
+            #         blockList[i][0].setOutline(blockList[i][1])
             break
     return score, ballSpeedX, ballSpeedY, level
         
@@ -271,7 +275,7 @@ def checkBat(bat, ball, ballSpeedX, ballSpeedY):
     if ballY <= topBat and ballY >= topBat + ballSpeedY \
                 and ballX <= rightBat + ballRadius and ballX >= leftBat - ballRadius:
         ballSpeedY = -ballSpeedY
-        ballSpeedX = random.random() * 0.01 - 0.005
+        ballSpeedX = random.random() * directionSpeedChangeX - (directionSpeedChangeX / 2)
         # import winsound
         # winsound.Beep(1000, 30)
     return ballSpeedX, ballSpeedY 
