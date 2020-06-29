@@ -1,7 +1,7 @@
 # blockbreaker
 ## University first year Python competition
 
-![blockbreaker gameplay](./gameplay.png)
+![blockbreaker gameplay](./assets/gameplay.png)
 
 ## Running
 Written for Python 2.7.
