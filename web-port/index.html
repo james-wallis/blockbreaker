@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block Breaker</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      font-family: 'Courier New', Courier, monospace;
+      color: #eee;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Positioned parent so the Entry <input> overlay can be placed over the canvas. */
+    #stage {
+      position: relative;
+      width: 900px;
+      max-width: 100%;
+      aspect-ratio: 3 / 2;
+    }
+    #game {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border: 1px solid #222;
+      /* Keep the pixel-art crispness of the original. */
+      image-rendering: pixelated;
+      /* Let the game handle touch drags (bat steering) instead of the browser
+         scrolling/zooming the page when you swipe on the canvas. */
+      touch-action: none;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none; /* children (inputs) re-enable it */
+    }
+    #overlay input { pointer-events: auto; }
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #000;
+      z-index: 20;
+      transition: opacity .4s ease;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading h1 { margin: 0; font-size: clamp(24px, 5vw, 44px); letter-spacing: 2px; }
+    #loading p { margin: 0; color: #888; font-size: 14px; }
+    #loading .tagline { color: #aaa; font-size: 15px; letter-spacing: 1px; margin-top: -4px; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #333; border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="900" height="600"></canvas>
+    <div id="overlay"></div>
+    <div id="loading">
+      <h1>BLOCK BREAKER</h1>
+      <p class="tagline">A first year uni project</p>
+      <div class="spinner"></div>
+      <p id="loading-text">Loading Python runtime…</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script>
+    async function boot() {
+      const loadingText = document.getElementById("loading-text");
+      const loading = document.getElementById("loading");
+      try {
+        loadingText.textContent = "Loading Python runtime…";
+        const pyodide = await loadPyodide();
+
+        loadingText.textContent = "Loading game…";
+        const [graphicsSrc, gameSrc] = await Promise.all([
+          fetch("graphics.py").then((r) => r.text()),
+          fetch("blockbreaker.py").then((r) => r.text()),
+        ]);
+
+        pyodide.FS.mkdirTree("/game");
+        pyodide.FS.writeFile("/game/graphics.py", graphicsSrc);
+        pyodide.FS.writeFile("/game/blockbreaker.py", gameSrc);
+
+        // Import modules (this also registers window.__bbRender for the paint loop).
+        await pyodide.runPythonAsync(`
+import sys
+sys.path.insert(0, "/game")
+import graphics
+import blockbreaker
+`);
+
+        // Continuous paint loop driven by the browser; it reads current scene state.
+        function frame() {
+          if (window.__bbRender) {
+            try { window.__bbRender(); } catch (e) { /* ignore transient paint errors */ }
+          }
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        // Hide the loader and start the game.
+        loading.classList.add("hidden");
+        await pyodide.runPythonAsync("await blockbreaker.main()");
+      } catch (err) {
+        console.error(err);
+        loadingText.textContent =
+          "Failed to load. If opening locally, serve over http (see README).";
+        loadingText.style.color = "#f55";
+      }
+    }
+    boot();
+  </script>
+</body>
+</html>
