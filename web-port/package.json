@@ -1,0 +1,10 @@
+{
+  "name": "blockbreaker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared-leaderboard API for the Block Breaker web port",
+  "dependencies": {
+    "@libsql/client": "^0.17.0"
+  }
+}
